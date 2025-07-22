@@ -1,4 +1,4 @@
-export type ScorePerFrame = { totalScore: number, frameIndex: number }
+export type ScorePerFrame = { totalScore: number, rollIndex: number }
 
 export class BowlingGame {
   private readonly maxScorePerFrame = 10;
@@ -10,24 +10,24 @@ export class BowlingGame {
 
   calculateTotalScore(): number {
     const result = this.frames()
-      .reduce(this.calculateScorePerFrame, { totalScore: 0, frameIndex: 0 });
+      .reduce(this.calculateScorePerFrame, { totalScore: 0, rollIndex: 0 });
     return result.totalScore;
   }
 
-  private calculateScorePerFrame = ({ totalScore, frameIndex }: ScorePerFrame) => {
-    if (this.isStrike(frameIndex)) {
+  private calculateScorePerFrame = ({ totalScore, rollIndex }: ScorePerFrame) => {
+    if (this.isStrike(rollIndex)) {
       return {
-        totalScore: totalScore + this.maxScorePerFrame + this.strikeBonus(frameIndex),
-        frameIndex: frameIndex + 1
+        totalScore: totalScore + this.maxScorePerFrame + this.strikeBonus(rollIndex),
+        rollIndex: rollIndex + 1
       };
     }
-    if (this.isSpare(frameIndex)) {
+    if (this.isSpare(rollIndex)) {
       return {
-        totalScore: totalScore + this.maxScorePerFrame + this.spareBonus(frameIndex),
-        frameIndex: frameIndex + 2
+        totalScore: totalScore + this.maxScorePerFrame + this.spareBonus(rollIndex),
+        rollIndex: rollIndex + 2
       };
     }
-    return { totalScore: totalScore + this.sumOfBallsInFrame(frameIndex), frameIndex: frameIndex + 2 };
+    return { totalScore: totalScore + this.sumOfBallsInFrame(rollIndex), rollIndex: rollIndex + 2 };
   };
 
   private frames() {
@@ -35,23 +35,23 @@ export class BowlingGame {
     return Array.from({ length: numberOfFrames }).map((_, i) => i);
   }
 
-  private isSpare(frameIndex: number) {
-    return this.rolls[frameIndex] + this.rolls[frameIndex + 1] == this.maxScorePerFrame;
+  private isSpare(rollIndex: number) {
+    return this.rolls[rollIndex] + this.rolls[rollIndex + 1] == this.maxScorePerFrame;
   }
 
-  private isStrike(frameIndex: number) {
-    return this.rolls[frameIndex] == this.maxScorePerFrame;
+  private isStrike(rollIndex: number) {
+    return this.rolls[rollIndex] == this.maxScorePerFrame;
   }
 
-  private strikeBonus(frameIndex: number) {
-    return this.rolls[frameIndex + 1] + this.rolls[frameIndex + 2];
+  private strikeBonus(rollIndex: number) {
+    return this.rolls[rollIndex + 1] + this.rolls[rollIndex + 2];
   }
 
-  private spareBonus(frameIndex: number) {
-    return this.rolls[frameIndex + 2];
+  private spareBonus(rollIndex: number) {
+    return this.rolls[rollIndex + 2];
   }
 
-  private sumOfBallsInFrame(frameIndex: number) {
-    return this.rolls[frameIndex] + this.rolls[frameIndex + 1];
+  private sumOfBallsInFrame(rollIndex: number) {
+    return this.rolls[rollIndex] + this.rolls[rollIndex + 1];
   }
 }
