@@ -1,7 +1,7 @@
 const MAX_PINS_PER_FRAME = 10;
 const MAX_GAME_FRAMES = 10;
 
-type ScoreType = {
+type FrameScore = {
 	rolls: number[];
 	frame: number;
 	totalScore: number;
@@ -21,62 +21,60 @@ function isStrike(pins: number = 0): boolean {
 	return pins === MAX_PINS_PER_FRAME;
 }
 
-function getScorePerFrame(...args): number {
-	return args?.reduce((acc, roll) => acc + (roll || 0), 0) || 0;
+function rollsScoreCalculation(...rolls): number {
+	return rolls?.reduce((acc, roll) => acc + (roll || 0), 0) || 0;
 }
 
-function transformStrikeScoreType({ rolls = [], frame = 1, totalScore = 0 }: ScoreType): ScoreType {
+function scoreCalculationByStrike({ rolls = [], frame = 1, totalScore = 0 }: FrameScore): FrameScore {
 	const remainingRolls = rolls.slice(1);
 	return {
 		rolls: remainingRolls,
 		frame: frame + 1,
-		totalScore: totalScore + getScorePerFrame(rolls[0], rolls[1], rolls[2]),
+		totalScore: totalScore + rollsScoreCalculation(rolls[0], rolls[1], rolls[2]),
 	};
 }
 
-function transformSpareScoreType({ rolls = [], frame = 1, totalScore = 0 }: ScoreType): ScoreType {
+function scoreCalculationBySpare({ rolls = [], frame = 1, totalScore = 0 }: FrameScore): FrameScore {
 	const remainingRolls = rolls.slice(2);
 	return {
 		rolls: remainingRolls,
 		frame: frame + 1,
-		totalScore: totalScore + getScorePerFrame(rolls[0], rolls[1], rolls[2]),
+		totalScore: totalScore + rollsScoreCalculation(rolls[0], rolls[1], rolls[2]),
 	};
 }
 
-function transformRestScoreType({ rolls = [], frame = 1, totalScore = 0 }: ScoreType): ScoreType {
+function scoreCalculationByDefault({ rolls = [], frame = 1, totalScore = 0 }: FrameScore): FrameScore {
 	const remainingRolls = rolls.slice(2);
 	return {
 		rolls: remainingRolls,
 		frame: frame + 1,
-		totalScore: totalScore + getScorePerFrame(rolls[0], rolls[1]),
+		totalScore: totalScore + rollsScoreCalculation(rolls[0], rolls[1]),
 	};
 }
 
-function calculateScorePerFrame(callback = getScorePerFrame) {
-	const ROLLS_STRATEGY_BY = {
-		STRIKE: transformStrikeScoreType,
-		SPARE: transformSpareScoreType,
-		DEFAULT: transformRestScoreType,
-	};
-	return (payload: ScoreType = { rolls: [], frame: 1, totalScore: 0 }): number => {
+function frameScoreCalculation(recursiveCallback = rollsScoreCalculation) {
+	return (payload: FrameScore = { rolls: [], frame: 1, totalScore: 0 }): number => {
 		const { rolls = [] } = payload || {};
-		const transformScoreTypeFunction = isStrike(rolls[0])
-			? ROLLS_STRATEGY_BY.STRIKE
-			: isSpare(rolls[0])(rolls[1])
-			? ROLLS_STRATEGY_BY.SPARE
-			: ROLLS_STRATEGY_BY.DEFAULT;
-		return callback(transformScoreTypeFunction(payload));
+		if (isStrike(rolls[0])) {
+			return recursiveCallback(scoreCalculationByStrike(payload));
+		}
+
+		if (isSpare(rolls[0])(rolls[1])) {
+			return recursiveCallback(scoreCalculationBySpare(payload));
+		}
+
+		return recursiveCallback(scoreCalculationByDefault(payload));
 	};
 }
 
-function calculateScore({ rolls = [], frame = 1, totalScore = 0 }: ScoreType): number {
+function gameScoreCalculation({ rolls = [], frame = 1, totalScore = 0 }: FrameScore): number {
 	const itCanPlayGameByFrame = itCanPlayGame(rolls);
 	if (!itCanPlayGameByFrame(frame)) {
 		return totalScore;
 	}
 
-	const calculateScoreByRollType = calculateScorePerFrame(calculateScore);
-	return calculateScoreByRollType({
+	const scoreCalculationByRollType = frameScoreCalculation(gameScoreCalculation);
+	return scoreCalculationByRollType({
 		rolls,
 		frame,
 		totalScore,
@@ -84,7 +82,7 @@ function calculateScore({ rolls = [], frame = 1, totalScore = 0 }: ScoreType): n
 }
 
 function playGame(rolls: number[] = []): number {
-	return calculateScore({ rolls, frame: 1, totalScore: 0 });
+	return gameScoreCalculation({ rolls, frame: 1, totalScore: 0 });
 }
 
 export { playGame };
